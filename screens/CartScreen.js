@@ -44,6 +44,17 @@ export default function CartScreen() {
         }, [userId])
     );
 
+    // xoa san pham khoi gio hang sau khi thanh toán 
+    useEffect(() => {
+        const fetchCart = async () => {
+            const savedCart = await AsyncStorage.getItem("cart");
+            if (savedCart) {
+                setCart(JSON.parse(savedCart));
+            }
+        };
+        fetchCart();
+    }, []);
+
     // Save cart data theo userId
     const saveCart = async (updatedCart) => {
         try {
