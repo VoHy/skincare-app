@@ -157,7 +157,7 @@ export default function HomeScreen() {
         }}
       />
 
-      Phần quảng cáo
+      {/* Phần quảng cáo */}
       <ImageBackground
         source={{
           uri: "https://cdn.happyskin.vn/media/54/cham-soc-lan-da-nang-tam-ve-dep.jpg",
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   spacing: {
-    height: 10, // Khoảng cách giữa quảng cáo và danh sách brand
+    height: 20, // Khoảng cách giữa quảng cáo và danh sách brand
   },
   brandList: {
     flexDirection: "row",
