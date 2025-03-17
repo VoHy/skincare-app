@@ -48,13 +48,14 @@ const BottomTabs = ({ isLoggedIn, setIsLoggedIn }) => {
             />
             <Tab.Screen
                 name="Account"
-                component={() => <AccountScreen isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />}
                 options={{
                     tabBarIcon: ({ color, size }) => (
                         <Icon name="user" size={size} color={color} />
                     )
                 }}
-            />
+            >
+                {() => <AccountScreen isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />}
+            </Tab.Screen>
         </Tab.Navigator>
     );
 };

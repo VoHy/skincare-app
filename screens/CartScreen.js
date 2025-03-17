@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, Text, FlatList, TouchableOpacity, Alert, StyleSheet } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, Alert, StyleSheet, Image } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 
@@ -27,6 +27,7 @@ export default function CartScreen() {
                 return;
             }
             const storedCart = await AsyncStorage.getItem(`cart_${userId}`);
+            console.log("Stored cart:", storedCart);
             if (storedCart) {
                 setCart(JSON.parse(storedCart));
             }
@@ -123,7 +124,11 @@ export default function CartScreen() {
                         renderItem={({ item }) => (
                             <View style={styles.item} key={item._id}>
                                 <TouchableOpacity onPress={() => navigation.navigate("DetailsScreen", { productId: item._id })}>
-                                    <Text style={styles.name}>{item.name}</Text>
+                                    <Text style={styles.name}> {item.name}</Text>
+                                    <Image
+                                        source={{ uri: item.images?.[0] || "https://via.placeholder.com/150" }}
+                                        style={styles.image}
+                                    />
                                 </TouchableOpacity>
                                 <View style={styles.info}>
                                     <View style={styles.priceContainer}>
@@ -201,7 +206,6 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        alignItems: "center",
         backgroundColor: "#fff",
         padding: 12,
         borderRadius: 10,
@@ -213,10 +217,11 @@ const styles = StyleSheet.create({
         elevation: 4,
     },
     name: {
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: "bold",
         color: "#333",
         flex: 1,
+        marginRight: 10, // Add margin to separate from the info section
     },
     info: {
         alignItems: "flex-end",
@@ -292,6 +297,8 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         alignItems: "center",
         width: "80%",
+        alignSelf: "center",
+        marginTop: 20,
     },
     clearText: {
         fontSize: 16,
@@ -304,10 +311,13 @@ const styles = StyleSheet.create({
         backgroundColor: "#FF6F61",
         padding: 15,
         borderRadius: 8,
-        alignItems: "center"
+        alignItems: "center",
+        width: "80%",
+        alignSelf: "center",
     },
     paymentText: {
         fontSize: 20,
         fontWeight: "bold",
-    }
+        color: "#fff",
+    },
 });

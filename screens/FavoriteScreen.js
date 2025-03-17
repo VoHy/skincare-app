@@ -31,7 +31,7 @@ export default function FavoriteScreen() {
         }
         try {
             const storedFavorites = await AsyncStorage.getItem(`favorites_${userId}`);
-            console.log("Stored favorites:", storedFavorites);
+            // console.log("Stored favorites:", storedFavorites);
 
             if (storedFavorites) {
                 const parsedFavorites = JSON.parse(storedFavorites);

@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, Button, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { View, Text, Button, TouchableOpacity, StyleSheet, Alert, Image } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios"; // Gọi API
@@ -56,7 +56,11 @@ export default function PayScreen() {
 
             {cart.map((item, index) => (
                 <Text key={index} style={styles.product}>
-                    {item.name} - {item.quantity} x {item.price} VND
+                    <Image
+                        source={{ uri: item.image}}
+                        style={{ width: 50, height: 50, marginRight: 10 }}
+                        resizeMode="contain"
+                    /> - {item.name} - {item.quantity} x {item.price} VND
                 </Text>
             ))}
 

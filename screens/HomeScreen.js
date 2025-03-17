@@ -1,20 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, FlatList, StyleSheet, ActivityIndicator } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { API_URL } from "../utils/ApiConfig";
 import ProductItem from "../components/ProductItem";
 import Header from "../components/Header";
-import CategoryFilter from "../components/CategoryFilter";
 
 export default function HomeScreen() {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
+  const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedBrand, setSelectedBrand] = useState("");
   const navigation = useNavigation();
 
-  // Fetch all products from the API when the screen is loaded
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -26,8 +25,15 @@ export default function HomeScreen() {
         }
 
         if (data && Array.isArray(data.data)) {
-          setProducts(data.data);
-          setFilteredProducts(data.data);  
+          // Sắp xếp sản phẩm theo createdAt (mới nhất lên đầu)
+          const sortedProducts = data.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+          setProducts(sortedProducts);
+          setFilteredProducts(sortedProducts);
+
+          // Lấy danh sách brand duy nhất
+          const uniqueBrands = ["All", ...new Set(sortedProducts.map(product => product.brand).filter(Boolean))];
+          setBrands(uniqueBrands);
         } else {
           setError("No products available.");
         }
@@ -41,29 +47,11 @@ export default function HomeScreen() {
     fetchProducts();
   }, []);
 
-  const handleSearch = (searchText) => {
-    const filteredProducts = products.filter((item) => {
-      const category = item.category;
-      if (category && typeof category === "string") {
-        return (
-          item.name.toLowerCase().includes(searchText.toLowerCase()) ||
-          item.brand.toLowerCase().includes(searchText.toLowerCase()) ||
-          category.toLowerCase().includes(searchText.toLowerCase())
-        );
-      }
-      return (
-        item.name.toLowerCase().includes(searchText.toLowerCase()) ||
-        item.brand.toLowerCase().includes(searchText.toLowerCase())
-      );
-    });
-    setFilteredProducts(filteredProducts); 
-  };
-
-  // Handle category selection
+  // Lọc sản phẩm theo brand
   const handleBrandSelect = (brand) => {
-    setSelectedCategory(brand);
-    if (brand === "") {
-      setFilteredProducts(products);
+    setSelectedBrand(brand);
+    if (brand === "All") {
+      setFilteredProducts(products); // Hiển thị toàn bộ sản phẩm
     } else {
       const filteredByBrand = products.filter(
         (product) =>
@@ -75,7 +63,6 @@ export default function HomeScreen() {
     }
   };
 
-  // Loading indicator
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -84,7 +71,6 @@ export default function HomeScreen() {
     );
   }
 
-  // Error handling
   if (error) {
     return (
       <View style={styles.container}>
@@ -95,28 +81,44 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <Header onSearch={handleSearch} /> 
+      <Header onSearch={(searchText) => {
+        const filtered = products.filter(item =>
+          item.name.toLowerCase().includes(searchText.toLowerCase()) ||
+          item.brand.toLowerCase().includes(searchText.toLowerCase())
+        );
+        setFilteredProducts(filtered);
+      }} />
 
-      {/* Category Filter */}
-      {/* <CategoryFilter
-        selectedCategory={selectedCategory}
-        onSelectCategory={handleBrandSelect}
-      /> */}
+      {/* Danh sách brand */}
+      <FlatList
+        data={[...brands]}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(item, index) => index.toString()}
+        contentContainerStyle={styles.brandList}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={[styles.brandButton, selectedBrand === item && styles.brandSelected]}
+            onPress={() => handleBrandSelect(item)}
+          >
+            <Text style={[styles.brandText, selectedBrand === item && styles.brandTextSelected]}>{item}</Text>
+          </TouchableOpacity>
+        )}
+      />
 
+      {/* Danh sách sản phẩm */}
       {filteredProducts.length === 0 ? (
-        <Text style={styles.emptyText}>No products available at the moment.</Text>
+        <Text style={styles.emptyText}>No products available.</Text>
       ) : (
         <FlatList
           data={filteredProducts}
+          key={selectedBrand}
           keyExtractor={(item) => item._id.toString()}
           numColumns={2}
           renderItem={({ item }) => (
             <ProductItem
               item={item}
-              onPress={() => {
-                console.log('Navigating with product ID:', item._id);
-                navigation.navigate("DetailsScreen", { productId: item._id });
-              }}
+              onPress={() => navigation.navigate("DetailsScreen", { productId: item._id })}
             />
           )}
         />
@@ -148,5 +150,34 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "red",
     marginTop: 20,
+  },
+  brandList: {
+    flexDirection: "row",
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    justifyContent: "center",
+  },
+  brandButton: {
+    minHeight: 40,
+    maxHeight: 50,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#FF6F61",
+    marginHorizontal: 5,
+  },
+  brandText: {
+    fontSize: 14,
+    color: "#FF6F61",
+    textAlign: "center",
+  },
+  brandSelected: {
+    backgroundColor: "#FF6F61",
+  },
+  brandTextSelected: {
+    color: "#fff",
   },
 });

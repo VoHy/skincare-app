@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { API_URL } from "../utils/ApiConfig";
+import { useNavigation } from '@react-navigation/native';
 
-export default function SignUpScreen({ navigation }) {
+export default function SignUpScreen({ }) {
+    const navigation = useNavigation();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -84,7 +86,7 @@ export default function SignUpScreen({ navigation }) {
             <TouchableOpacity style={styles.button} onPress={handleSignUp}>
                 <Text style={styles.buttonText}>Đăng ký</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.registerButton} onPress={() => navigation.navigate('Login')}>
+            <TouchableOpacity style={styles.registerButton} onPress={() => navigation.goBack('Login')}>
                 <Text style={styles.registerText}>Đã có tài khoản? Đăng nhập ngay</Text>
             </TouchableOpacity>
         </View>
