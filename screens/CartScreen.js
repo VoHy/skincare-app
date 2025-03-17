@@ -221,7 +221,13 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         color: "#333",
         flex: 1,
-        marginRight: 10, // Add margin to separate from the info section
+        marginRight: 10,
+        overflow: "hidden",
+    },
+    image: {
+        width: 100,
+        height: 100,
+        resizeMode: "cover",
     },
     info: {
         alignItems: "flex-end",
