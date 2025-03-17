@@ -11,6 +11,7 @@ import DetailsScreen from '../screens/DetailsScreen';
 import CartScreen from '../screens/CartScreen';
 import PayScreen from '../screens/PayScreen';
 import AccountScreen from '../screens/AccountScreen';
+import OrderStatusScreen from '../screens/OrderStatusScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -47,13 +48,14 @@ const BottomTabs = ({ isLoggedIn, setIsLoggedIn }) => {
             />
             <Tab.Screen
                 name="Account"
-                component={() => <AccountScreen isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />}
                 options={{
                     tabBarIcon: ({ color, size }) => (
                         <Icon name="user" size={size} color={color} />
                     )
                 }}
-            />
+            >
+                {() => <AccountScreen isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />}
+            </Tab.Screen>
         </Tab.Navigator>
     );
 };
@@ -83,6 +85,7 @@ export default function AppNavigator() {
             <Stack.Screen name="SignupScreen" component={SignupScreen} />
             <Stack.Screen name="DetailsScreen" component={DetailsScreen} options={{ title: "Chi tiết sản phẩm" }} />
             <Stack.Screen name="PayScreen" component={PayScreen} options={{ title: "Chi tiết sản phẩm" }} />
+            <Stack.Screen name="OrderStatusScreen" component={OrderStatusScreen} options={{ title: "Đơn hàng của tôi" }} />
         </Stack.Navigator>
 
     );
