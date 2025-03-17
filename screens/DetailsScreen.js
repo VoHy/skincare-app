@@ -55,7 +55,14 @@ const DetailsScreen = ({ route }) => {
             headerRight: () => (
                 <View style={{ flexDirection: "row", marginRight: 10 }}>
                     <TouchableOpacity
-                        onPress={() => navigation.navigate("Main", { screen: "Favorites" })}
+                        onPress={async () => {
+                            const userId = await AsyncStorage.getItem("userId");
+                            if (!userId) {
+                                Alert.alert("Thông báo", "Bạn cần đăng nhập để xem yêu thích.");
+                            } else {
+                                navigation.navigate("Main", { screen: "Favorites" });
+                            }
+                        }}
                         style={[styles.headerButton, { marginRight: 10 }]}
                     >
                         <Text style={styles.headerButtonText}>❤️</Text>
@@ -78,12 +85,16 @@ const DetailsScreen = ({ route }) => {
         });
     }, [navigation]);
 
-
     useFocusEffect(
         useCallback(() => {
             const checkFavoriteStatus = async () => {
                 try {
-                    const storedFavorites = await AsyncStorage.getItem('favorites');
+                    const userId = await AsyncStorage.getItem("userId");
+                    if (!userId) {
+                        return;
+                    }
+    
+                    const storedFavorites = await AsyncStorage.getItem(`favorites_${userId}`);
                     const favorites = storedFavorites ? JSON.parse(storedFavorites) : {};
                     setIsFavorite(!!favorites[productId]);
                 } catch (error) {
@@ -93,25 +104,34 @@ const DetailsScreen = ({ route }) => {
             checkFavoriteStatus();
         }, [productId])
     );
-
+    
     const toggleFavorite = async () => {
         try {
-            const storedFavorites = await AsyncStorage.getItem('favorites');
+            const userId = await AsyncStorage.getItem("userId");
+            if (!userId) {
+                Alert.alert("Thông báo", "Bạn cần đăng nhập để thêm vào yêu thích.");
+                return;
+            }
+    
+            const storedFavorites = await AsyncStorage.getItem(`favorites_${userId}`);
             let favorites = storedFavorites ? JSON.parse(storedFavorites) : {};
-
+    
+            // Toggle favorite status for the product
             if (favorites[productId]) {
-                delete favorites[productId];
+                delete favorites[productId];  // Remove product from favorites
                 setIsFavorite(false);
             } else {
-                favorites[productId] = product;
+                favorites[productId] = product;  // Add product to favorites
                 setIsFavorite(true);
             }
-
-            await AsyncStorage.setItem('favorites', JSON.stringify(favorites));
+    
+            // Save updated favorites list for the user
+            await AsyncStorage.setItem(`favorites_${userId}`, JSON.stringify(favorites));
         } catch (error) {
             console.error("Error saving favorites:", error);
         }
     };
+    
     // Add to cart functionality
     const addToCart = async () => {
         try {
