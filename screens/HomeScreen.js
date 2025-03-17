@@ -1,9 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+  ImageBackground,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { API_URL } from "../utils/ApiConfig";
 import ProductItem from "../components/ProductItem";
 import Header from "../components/Header";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function HomeScreen() {
   const [products, setProducts] = useState([]);
@@ -12,6 +22,7 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedBrand, setSelectedBrand] = useState("");
+  const [favorites, setFavorites] = useState([]);
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -25,14 +36,19 @@ export default function HomeScreen() {
         }
 
         if (data && Array.isArray(data.data)) {
-          // Sắp xếp sản phẩm theo createdAt (mới nhất lên đầu)
-          const sortedProducts = data.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          const sortedProducts = data.data.sort(
+            (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+          );
 
           setProducts(sortedProducts);
           setFilteredProducts(sortedProducts);
 
-          // Lấy danh sách brand duy nhất
-          const uniqueBrands = ["All", ...new Set(sortedProducts.map(product => product.brand).filter(Boolean))];
+          const uniqueBrands = [
+            "All",
+            ...new Set(
+              sortedProducts.map((product) => product.brand).filter(Boolean)
+            ),
+          ];
           setBrands(uniqueBrands);
         } else {
           setError("No products available.");
@@ -47,11 +63,29 @@ export default function HomeScreen() {
     fetchProducts();
   }, []);
 
-  // Lọc sản phẩm theo brand
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      try {
+        const userId = await AsyncStorage.getItem("userId");
+        if (userId) {
+          const storedFavorites = await AsyncStorage.getItem(
+            `favorites_${userId}`
+          );
+          const favorites = storedFavorites ? JSON.parse(storedFavorites) : [];
+          setFavorites(favorites);
+        }
+      } catch (error) {
+        console.error("Error fetching favorites:", error);
+      }
+    };
+
+    fetchFavorites();
+  }, []);
+
   const handleBrandSelect = (brand) => {
     setSelectedBrand(brand);
     if (brand === "All") {
-      setFilteredProducts(products); // Hiển thị toàn bộ sản phẩm
+      setFilteredProducts(products);
     } else {
       const filteredByBrand = products.filter(
         (product) =>
@@ -60,6 +94,37 @@ export default function HomeScreen() {
           product.brand.toLowerCase() === brand.toLowerCase()
       );
       setFilteredProducts(filteredByBrand);
+    }
+  };
+
+  const handleFavorite = async (productId) => {
+    try {
+      const userId = await AsyncStorage.getItem("userId");
+      if (!userId) {
+        Alert.alert("Thông báo", "Bạn cần đăng nhập để thêm vào yêu thích.");
+        return;
+      }
+
+      const storedFavorites = await AsyncStorage.getItem(`favorites_${userId}`);
+      let favorites = storedFavorites ? JSON.parse(storedFavorites) : [];
+
+      const index = favorites.findIndex((item) => item._id === productId);
+      if (index !== -1) {
+        favorites.splice(index, 1);
+      } else {
+        const productToAdd = products.find((item) => item._id === productId);
+        if (productToAdd) {
+          favorites.push(productToAdd);
+        }
+      }
+
+      await AsyncStorage.setItem(
+        `favorites_${userId}`,
+        JSON.stringify(favorites)
+      );
+      setFavorites(favorites);
+    } catch (error) {
+      console.error("Error saving favorites:", error);
     }
   };
 
@@ -81,13 +146,29 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <Header onSearch={(searchText) => {
-        const filtered = products.filter(item =>
-          item.name.toLowerCase().includes(searchText.toLowerCase()) ||
-          item.brand.toLowerCase().includes(searchText.toLowerCase())
-        );
-        setFilteredProducts(filtered);
-      }} />
+      <Header
+        onSearch={(searchText) => {
+          const filtered = products.filter(
+            (item) =>
+              item.name.toLowerCase().includes(searchText.toLowerCase()) ||
+              item.brand.toLowerCase().includes(searchText.toLowerCase())
+          );
+          setFilteredProducts(filtered);
+        }}
+      />
+
+      Phần quảng cáo
+      <ImageBackground
+        source={{
+          uri: "https://cdn.happyskin.vn/media/54/cham-soc-lan-da-nang-tam-ve-dep.jpg",
+        }}
+        style={styles.adContainer}
+        imageStyle={styles.adImage}
+      >
+      </ImageBackground>
+
+      {/* Khoảng cách giữa quảng cáo và danh sách brand */}
+      <View style={styles.spacing} />
 
       {/* Danh sách brand */}
       <FlatList
@@ -98,10 +179,20 @@ export default function HomeScreen() {
         contentContainerStyle={styles.brandList}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={[styles.brandButton, selectedBrand === item && styles.brandSelected]}
+            style={[
+              styles.brandButton,
+              selectedBrand === item && styles.brandSelected,
+            ]}
             onPress={() => handleBrandSelect(item)}
           >
-            <Text style={[styles.brandText, selectedBrand === item && styles.brandTextSelected]}>{item}</Text>
+            <Text
+              style={[
+                styles.brandText,
+                selectedBrand === item && styles.brandTextSelected,
+              ]}
+            >
+              {item}
+            </Text>
           </TouchableOpacity>
         )}
       />
@@ -112,15 +203,21 @@ export default function HomeScreen() {
       ) : (
         <FlatList
           data={filteredProducts}
-          key={selectedBrand}
           keyExtractor={(item) => item._id.toString()}
           numColumns={2}
-          renderItem={({ item }) => (
-            <ProductItem
-              item={item}
-              onPress={() => navigation.navigate("DetailsScreen", { productId: item._id })}
-            />
-          )}
+          renderItem={({ item }) => {
+            const isFavorite = favorites.some((fav) => fav._id === item._id);
+            return (
+              <ProductItem
+                item={item}
+                onPress={() =>
+                  navigation.navigate("DetailsScreen", { productId: item._id })
+                }
+                onFavorite={() => handleFavorite(item._id)}
+                isFavorite={isFavorite}
+              />
+            );
+          }}
         />
       )}
     </View>
@@ -150,6 +247,30 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "red",
     marginTop: 20,
+  },
+  adContainer: {
+    width: "100%",
+    height: 150,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+    borderRadius: 10,
+    overflow: "hidden",
+  },
+  adImage: {
+    borderRadius: 10,
+  },
+  adText: {
+    color: "#fff",
+    fontSize: 24,
+    fontWeight: "bold",
+    textAlign: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    padding: 10,
+    borderRadius: 5,
+  },
+  spacing: {
+    height: 10, // Khoảng cách giữa quảng cáo và danh sách brand
   },
   brandList: {
     flexDirection: "row",
