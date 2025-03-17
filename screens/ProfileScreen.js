@@ -51,25 +51,79 @@ export default function ProfileScreen({ setIsLoggedIn }) {
     return (
         <View style={styles.container}>
             {user ? (
-                <>
+                <View style={styles.card}>
                     <Text style={styles.title}>Thông tin người dùng</Text>
-                    <Text><Text style={styles.label}>Tên:</Text> {user.name}</Text>
-                    <Text><Text style={styles.label}>Email:</Text> {user.email}</Text>
-                    <Text><Text style={styles.label}>SĐT:</Text> {user.phone}</Text>
-                    <Text><Text style={styles.label}>Quyền Admin:</Text> {user.isAdmin ? "Có" : "Không"}</Text>
-                    <Text><Text style={styles.label}>Ngày tạo:</Text> {new Date(user.createdAt).toLocaleDateString()}</Text>
-                    <Button title="Đăng xuất" onPress={handleLogout} />
-                </>
+                    <Text style={styles.infoText}><Text style={styles.label}>Tên:</Text> {user.name}</Text>
+                    <Text style={styles.infoText}><Text style={styles.label}>Email:</Text> {user.email}</Text>
+                    <Text style={styles.infoText}><Text style={styles.label}>SĐT:</Text> {user.phone}</Text>
+                    <Text style={styles.infoText}><Text style={styles.label}>Quyền Admin:</Text> {user.isAdmin ? "Có" : "Không"}</Text>
+                    <Text style={styles.infoText}><Text style={styles.label}>Ngày tạo:</Text> {new Date(user.createdAt).toLocaleDateString()}</Text>
+                    <View style={styles.button}>
+                        <Text style={styles.buttonText} onPress={handleLogout}>Đăng xuất</Text>
+                    </View>
+                </View>
             ) : (
                 <Text style={styles.errorText}>Không thể tải thông tin người dùng</Text>
             )}
         </View>
+
     );
 }
-
 const styles = StyleSheet.create({
-    container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-    title: { fontSize: 22, fontWeight: 'bold', marginBottom: 10 },
-    label: { fontWeight: 'bold' },
-    errorText: { color: 'red', fontSize: 16 },
+    container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#f4f4f4', // Màu nền nhẹ nhàng
+        padding: 20,
+    },
+    card: {
+        backgroundColor: '#fff',
+        padding: 20,
+        borderRadius: 10,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowOffset: { width: 0, height: 3 },
+        shadowRadius: 5,
+        elevation: 5, // Hiệu ứng bóng cho Android
+        width: '90%',
+        alignItems: 'center',
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#007bff',
+        marginBottom: 15,
+    },
+    infoText: {
+        fontSize: 18,
+        marginBottom: 8,
+        color: '#333',
+    },
+    label: {
+        fontWeight: 'bold',
+        color: '#555',
+    },
+    errorText: {
+        color: 'red',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    button: {
+        marginTop: 20,
+        backgroundColor: '#d9534f',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 5,
+        shadowColor: '#d9534f',
+        shadowOpacity: 0.4,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 3,
+        elevation: 3,
+    },
+    buttonText: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
 });
