@@ -12,6 +12,7 @@ import CartScreen from '../screens/CartScreen';
 import PayScreen from '../screens/PayScreen';
 import AccountScreen from '../screens/AccountScreen';
 import OrderStatusScreen from '../screens/OrderStatusScreen';
+import WebViewScreen from '../screens/WebViewScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -86,7 +87,7 @@ export default function AppNavigator() {
             <Stack.Screen name="DetailsScreen" component={DetailsScreen} options={{ title: "Chi tiết sản phẩm" }} />
             <Stack.Screen name="PayScreen" component={PayScreen} options={{ title: "Chi tiết sản phẩm" }} />
             <Stack.Screen name="OrderStatusScreen" component={OrderStatusScreen} options={{ title: "Đơn hàng của tôi" }} />
+            <Stack.Screen name="WebViewScreen" component={WebViewScreen} />
         </Stack.Navigator>
-
     );
 }
