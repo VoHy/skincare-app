@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Alert,
   ImageBackground,
+  ScrollView,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { API_URL } from "../utils/ApiConfig";
@@ -146,62 +147,74 @@ export default function HomeScreen() {
         onSearch={(searchText) => {
           const filtered = [...newestProducts, ...topPurchasedProducts].filter(
             (item) =>
-              item.name.toLowerCase().includes(searchText.toLowerCase()) ||
-              item.brand.toLowerCase().includes(searchText.toLowerCase())
+            (item?.name?.toLowerCase().includes(searchText.toLowerCase()) ||
+              item?.brand?.name?.toLowerCase().includes(searchText.toLowerCase()))
           );
           setFilteredProducts(filtered);
         }}
       />
 
-      <ImageBackground
-        source={{
-          uri: "https://cdn.happyskin.vn/media/54/cham-soc-lan-da-nang-tam-ve-dep.jpg",
-        }}
-        style={styles.adContainer}
-        imageStyle={styles.adImage}
-      />
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <ImageBackground
+          source={{
+            uri: "https://cdn.happyskin.vn/media/54/cham-soc-lan-da-nang-tam-ve-dep.jpg",
+          }}
+          style={styles.adContainer}
+          imageStyle={styles.adImage}
+        />
 
-      <View style={styles.spacing} />
+        <View style={styles.spacing} />
 
-      <Text style={styles.sectionTitle}>Sản phẩm mới</Text>
-      <FlatList
-        data={newestProducts}
-        keyExtractor={(item) => item._id.toString()}
-        numColumns={2}
-        showsHorizontalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <ProductItem
-            item={item}
-            onPress={() =>
-              navigation.navigate("DetailsScreen", { productId: item._id })
-            }
-            onFavorite={() => handleFavorite(item._id)}
-            isFavorite={favorites.some((fav) => fav._id === item._id)}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Sản phẩm mới</Text>
+          <FlatList
+            data={newestProducts}
+            keyExtractor={(item) => item._id.toString()}
+            horizontal={true}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.productList}
+            renderItem={({ item }) => (
+              <View style={styles.productItemContainer}>
+                <ProductItem
+                  item={item}
+                  onPress={() =>
+                    navigation.navigate("DetailsScreen", { productId: item._id })
+                  }
+                  onFavorite={() => handleFavorite(item._id)}
+                  isFavorite={favorites.some((fav) => fav._id === item._id)}
+                />
+              </View>
+            )}
           />
-        )}
-      />
-
-      <View style={styles.spacing} />
-
-      <Text style={styles.sectionTitle}>Sản phẩm bán chạy</Text>
-      <FlatList
-        data={topPurchasedProducts}
-        keyExtractor={(item) => item._id.toString()}
-        numColumns={2}
-        showsHorizontalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <ProductItem
-            item={item.product}
-            onPress={() =>
-              navigation.navigate("DetailsScreen", { productId: item._id })
-            }
-            onFavorite={() => handleFavorite(item._id)}
-            isFavorite={favorites.some((fav) => fav._id === item._id)}
+          <View style={styles.spacing} />
+          <Text style={styles.sectionTitle}>Sản phẩm bán chạy</Text>
+          <FlatList
+            data={topPurchasedProducts}
+            keyExtractor={(item) => item._id.toString()}
+            horizontal={true}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.productList}
+            renderItem={({ item }) => (
+              <View style={styles.productItemContainer}>
+                <View style={styles.purchaseCountContainer}>
+                  <Text style={styles.purchaseCountText}>Đã bán: {item.totalPurchased}</Text>
+                </View>
+                <ProductItem
+                  item={item.product}
+                  onPress={() =>
+                    navigation.navigate("DetailsScreen", { productId: item._id })
+                  }
+                  onFavorite={() => handleFavorite(item._id)}
+                  isFavorite={favorites.some((fav) => fav._id === item._id)}
+                />
+              </View>
+            )}
           />
-        )}
-      />
 
-      <View style={styles.spacing} />
+        </View>
+
+        <View style={styles.spacing} />
+      </ScrollView>
     </View>
   );
 }
@@ -210,7 +223,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f8f8f8",
-    padding: 10,
   },
   loadingContainer: {
     flex: 1,
@@ -226,27 +238,68 @@ const styles = StyleSheet.create({
   },
   adContainer: {
     width: "100%",
-    height: 150,
+    height: 180,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 10,
-    borderRadius: 10,
+    marginTop: 10,
+    marginHorizontal: 10,
+    borderRadius: 15,
     overflow: "hidden",
-    elevation: 3,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   adImage: {
-    borderRadius: 10,
     width: "100%",
     height: "100%",
     resizeMode: "cover",
+    borderRadius: 15,
   },
   spacing: {
-    height: 10,
+    height: 15,
+  },
+  sectionContainer: {
+    marginHorizontal: 10,
+    marginVertical: 5,
   },
   sectionTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "bold",
-    marginVertical: 10,
+    marginVertical: 12,
     color: "#333",
+    paddingLeft: 5,
+  },
+  productList: {
+    paddingHorizontal: 5,
+    paddingVertical: 10,
+  },
+  purchaseCountContainer: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    backgroundColor: 'rgba(255, 111, 97, 0.9)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    zIndex: 2,
+  },
+  purchaseCountText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  productItemContainer: {
+    marginHorizontal: 8,
+    borderRadius: 12,
+    width: 180,
+    height: 280,
+    elevation: 3,
+    position: 'relative',
+    overflow: 'hidden',
   },
 });

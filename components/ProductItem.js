@@ -41,7 +41,7 @@ export default function ProductItem({ item, onPress, onFavorite, isFavorite }) {
 
       {/* Thông tin sản phẩm */}
       <View style={styles.infoContainer}>
-        <Text style={styles.name} numberOfLines={2}>
+        <Text style={styles.name} numberOfLines={3}>
           {item.name}
         </Text>
 
@@ -133,6 +133,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
     textAlign: "center",
+    width: 130,
     color: "#333",
   },
   priceContainer: {

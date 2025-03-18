@@ -21,9 +21,11 @@ export default function ProductsScreen() {
     const [products, setProducts] = useState([]);
     const [filteredProducts, setFilteredProducts] = useState([]);
     const [brands, setBrands] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedBrand, setSelectedBrand] = useState("");
+    const [selectedCategory, setSelectedCategory] = useState("");
     const [favorites, setFavorites] = useState([]);
     const navigation = useNavigation();
 
@@ -52,6 +54,16 @@ export default function ProductsScreen() {
                         ),
                     ];
                     setBrands(uniqueBrands);
+
+                    const uniqueCategories = [
+                        "All",
+                        ...new Set(
+                            sortedProducts
+                                .filter(product => product.category && product.category.name)
+                                .map(product => product.category.name)
+                        ),
+                    ];
+                    setCategories(uniqueCategories);
                 } else {
                     setError("No products available.");
                 }
@@ -73,9 +85,8 @@ export default function ProductsScreen() {
                     `favorites_${userId}`
                 );
                 let favorites = storedFavorites ? JSON.parse(storedFavorites) : [];
-                // Đảm bảo favorites là một mảng
                 if (!Array.isArray(favorites)) {
-                    favorites = []; // Khởi tạo lại nếu không phải là mảng
+                    favorites = [];
                 }
                 setFavorites(favorites);
             }
@@ -88,7 +99,6 @@ export default function ProductsScreen() {
         fetchFavorites();
     }, []);
 
-    // Thêm useFocusEffect để gọi lại fetchFavorites khi quay lại HomeScreen
     useFocusEffect(
         React.useCallback(() => {
             fetchFavorites();
@@ -97,17 +107,36 @@ export default function ProductsScreen() {
 
     const handleBrandSelect = (brand) => {
         setSelectedBrand(brand);
-        if (brand === "All") {
-            setFilteredProducts(products);
-        } else {
-            const filteredByBrand = products.filter(
+        filterProducts(brand, selectedCategory);
+    };
+
+    const handleCategoryNameSelect = (category) => {
+        setSelectedCategory(category);
+        filterProducts(selectedBrand, category);
+    };
+
+    const filterProducts = (brand, category) => {
+        let filtered = products;
+
+        if (brand && brand !== "All") {
+            filtered = filtered.filter(
                 (product) =>
                     product.brand &&
                     typeof product.brand === "string" &&
                     product.brand.toLowerCase() === brand.toLowerCase()
             );
-            setFilteredProducts(filteredByBrand);
         }
+
+        if (category && category !== "All") {
+            filtered = filtered.filter(
+                (product) =>
+                    product.category &&
+                    product.category.name &&
+                    product.category.name.toLowerCase() === category.toLowerCase()
+            );
+        }
+
+        setFilteredProducts(filtered);
     };
 
     const handleFavorite = async (productId) => {
@@ -121,9 +150,8 @@ export default function ProductsScreen() {
             const storedFavorites = await AsyncStorage.getItem(`favorites_${userId}`);
             let favorites = storedFavorites ? JSON.parse(storedFavorites) : [];
 
-            // Đảm bảo favorites là một mảng
             if (!Array.isArray(favorites)) {
-                favorites = []; // Khởi tạo lại nếu không phải là mảng
+                favorites = [];
             }
 
             const index = favorites.findIndex((item) => item._id === productId);
@@ -200,9 +228,37 @@ export default function ProductsScreen() {
                 />
             </View>
 
+            <Text style={styles.brandTitle}>Tên Loại Sản Phẩm</Text>
+            <View style={styles.brandContainer}>
+                <FlatList
+                    data={[...categories]}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    keyExtractor={(item, index) => index.toString()}
+                    contentContainerStyle={styles.brandList}
+                    renderItem={({ item }) => (
+                        <TouchableOpacity
+                            style={[
+                                styles.brandButton,
+                                selectedCategory === item && styles.brandSelected,
+                            ]}
+                            onPress={() => handleCategoryNameSelect(item)}
+                        >
+                            <Text
+                                style={[
+                                    styles.brandText,
+                                    selectedCategory === item && styles.brandTextSelected,
+                                ]}
+                            >
+                                {item}
+                            </Text>
+                        </TouchableOpacity>
+                    )}
+                />
+            </View>
+
             <View style={styles.spacing} />
 
-            {/* Danh sách sản phẩm */}
             {filteredProducts.length === 0 ? (
                 <Text style={styles.emptyText}>No products available.</Text>
             ) : (

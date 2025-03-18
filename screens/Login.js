@@ -46,6 +46,33 @@ export default function Login({ setIsLoggedIn }) {
         }
     };
 
+    const handleForgotPassword = async () => {
+        if (!email) {
+            Alert.alert("Lỗi", "Vui lòng nhập email để đặt lại mật khẩu!");
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_URL}/user/forgot-password`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email }),
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                Alert.alert("Thông báo", data.message);
+            } else {
+                Alert.alert("Lỗi", data.message || "Có lỗi xảy ra, vui lòng thử lại.");
+            }
+        } catch (error) {
+            console.error("Lỗi khi gửi yêu cầu đặt lại mật khẩu:", error);
+            Alert.alert("Lỗi", "Không thể kết nối đến máy chủ, vui lòng thử lại sau.");
+        }
+    };
+
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Đăng nhập</Text>
@@ -72,6 +99,11 @@ export default function Login({ setIsLoggedIn }) {
             <TouchableOpacity style={styles.registerButton} onPress={() => navigation.navigate('SignupScreen')}>
                 <Text style={styles.registerText}>Chưa có tài khoản? Đăng ký ngay</Text>
             </TouchableOpacity>
+
+            {/* Nút quên mật khẩu */}
+            <TouchableOpacity style={styles.forgotPasswordButton} onPress={handleForgotPassword}>
+                <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
+            </TouchableOpacity>
         </View>
     );
 }
@@ -84,4 +116,6 @@ const styles = StyleSheet.create({
     buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
     registerButton: { marginTop: 15 },
     registerText: { color: '#007bff', fontSize: 16 },
+    forgotPasswordButton: { marginTop: 15 },
+    forgotPasswordText: { color: '#007bff', fontSize: 16 },
 });
