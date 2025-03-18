@@ -13,6 +13,7 @@ import PayScreen from '../screens/PayScreen';
 import AccountScreen from '../screens/AccountScreen';
 import OrderStatusScreen from '../screens/OrderStatusScreen';
 import WebViewScreen from '../screens/WebViewScreen';
+import ProductsScreen from '../screens/ProductsScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -57,6 +58,15 @@ const BottomTabs = ({ isLoggedIn, setIsLoggedIn }) => {
             >
                 {() => <AccountScreen isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />}
             </Tab.Screen>
+            <Tab.Screen
+                name="Products"
+                component={ProductsScreen}
+                options={{
+                    tabBarIcon: ({ color, size }) => (
+                        <Icon name="th-list" size={size} color={color} />
+                    )
+                }}
+            />
         </Tab.Navigator>
     );
 };

@@ -143,7 +143,7 @@ export default function PayScreen() {
                         <Text style={styles.productName}>{item.name}</Text>
                         <Text style={styles.productPrice}>
                             {item.quantity} x {(item.discount_price || item.price).toLocaleString()} VND
-                        </Text>
+                </Text>
                     </View>
                 </View>
             ))}
