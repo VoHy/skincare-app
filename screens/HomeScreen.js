@@ -153,7 +153,8 @@ export default function HomeScreen() {
           setFilteredProducts(filtered);
         }}
       />
-
+      <View style={styles.spacing} />
+      
       <ScrollView showsVerticalScrollIndicator={false}>
         <ImageBackground
           source={{

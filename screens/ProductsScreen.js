@@ -228,7 +228,7 @@ export default function ProductsScreen() {
                 />
             </View>
 
-            <Text style={styles.brandTitle}>Tên Loại Sản Phẩm</Text>
+            <Text style={styles.brandTitle}>Loại Sản Phẩm</Text>
             <View style={styles.brandContainer}>
                 <FlatList
                     data={[...categories]}
@@ -290,7 +290,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#fff",
-        padding: 20,
     },
     loadingContainer: {
         flex: 1,
@@ -320,7 +319,10 @@ const styles = StyleSheet.create({
         overflow: "hidden",
     },
     adImage: {
-        borderRadius: 10,
+        width: "100%",
+        height: "100%",
+        resizeMode: "cover",
+        borderRadius: 15,
     },
     spacing: {
         height: 10,
@@ -334,6 +336,13 @@ const styles = StyleSheet.create({
         paddingVertical: 5,
         paddingHorizontal: 5,
         justifyContent: "flex-start",
+    },
+    brandTitle: {
+        fontSize: 24,
+        fontWeight: "bold",
+        marginVertical: 12,
+        color: "#333",
+        paddingLeft: 5,
     },
     brandButton: {
         minHeight: 35,
