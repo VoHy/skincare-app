@@ -13,6 +13,7 @@ const DetailsScreen = ({ route }) => {
     const [feedbacks, setFeedbacks] = useState([]);
     const [isFavorite, setIsFavorite] = useState(false);
     const [quantity, setQuantity] = useState(1);
+    const [relatedProducts, setRelatedProducts] = useState([]);
 
     // Fetch product details
     useEffect(() => {
@@ -26,17 +27,23 @@ const DetailsScreen = ({ route }) => {
                 ]);
 
                 const productData = await productRes.json();
+                console.log(productData);
                 const feedbackData = await feedbackRes.json();
+                console.log(feedbackData);
 
                 if (isMounted) {
                     if (productData?.data) {
                         setProduct(productData.data);
+                        // Lấy sản phẩm có cùng danh mục
+                        const relatedRes = await fetch(`${API_URL}/product/get-all/${productData.data.category._id}`);
+                        const relatedData = await relatedRes.json();
+                        setRelatedProducts(relatedData.data);
                     } else {
                         Alert.alert("Product not found");
                     }
 
-                    if (feedbackData.success) {
-                        setFeedbacks(feedbackData.reviews);
+                    if (feedbackData.status === "OK") {
+                        setFeedbacks(feedbackData.data);
                     }
                 }
             } catch (error) {
@@ -93,18 +100,27 @@ const DetailsScreen = ({ route }) => {
                     if (!userId) {
                         return;
                     }
-    
+
                     const storedFavorites = await AsyncStorage.getItem(`favorites_${userId}`);
-                    const favorites = storedFavorites ? JSON.parse(storedFavorites) : {};
-                    setIsFavorite(!!favorites[productId]);
+                    let favorites = storedFavorites ? JSON.parse(storedFavorites) : [];
+
+                    // Đảm bảo favorites là một mảng
+                    if (!Array.isArray(favorites)) {
+                        favorites = [];
+                    }
+
+                    // Kiểm tra xem sản phẩm có trong danh sách yêu thích không
+                    const isFav = favorites.some(item => item._id === productId);
+                    setIsFavorite(isFav);
                 } catch (error) {
                     console.error("Error loading favorites:", error);
                 }
             };
+
             checkFavoriteStatus();
         }, [productId])
     );
-    
+
     const toggleFavorite = async () => {
         try {
             const userId = await AsyncStorage.getItem("userId");
@@ -112,26 +128,39 @@ const DetailsScreen = ({ route }) => {
                 Alert.alert("Thông báo", "Bạn cần đăng nhập để thêm vào yêu thích.");
                 return;
             }
-    
+
             const storedFavorites = await AsyncStorage.getItem(`favorites_${userId}`);
-            let favorites = storedFavorites ? JSON.parse(storedFavorites) : {};
-    
-            // Toggle favorite status for the product
-            if (favorites[productId]) {
-                delete favorites[productId];  // Remove product from favorites
+            let favorites = storedFavorites ? JSON.parse(storedFavorites) : [];
+
+            // Đảm bảo favorites là một mảng
+            if (!Array.isArray(favorites)) {
+                favorites = [];
+            }
+
+            // Tìm sản phẩm trong danh sách yêu thích
+            const index = favorites.findIndex(item => item._id === productId);
+
+            // Toggle favorite status
+            if (index !== -1) {
+                // Sản phẩm đã tồn tại trong danh sách yêu thích, xóa nó
+                favorites.splice(index, 1);
                 setIsFavorite(false);
             } else {
-                favorites[productId] = product;  // Add product to favorites
+                // Sản phẩm chưa có trong danh sách yêu thích, thêm vào
+                favorites.push(product);
                 setIsFavorite(true);
             }
-    
-            // Save updated favorites list for the user
+
+            // Lưu danh sách yêu thích đã cập nhật
             await AsyncStorage.setItem(`favorites_${userId}`, JSON.stringify(favorites));
+
+            // Log để kiểm tra
+            console.log("Favorite status toggled:", !isFavorite);
         } catch (error) {
             console.error("Error saving favorites:", error);
         }
     };
-    
+
     // Add to cart functionality
     const addToCart = async () => {
         try {
@@ -158,8 +187,6 @@ const DetailsScreen = ({ route }) => {
         }
     };
 
-
-
     // If loading, show a loading indicator
     if (loading) {
         return <ActivityIndicator size="large" color="#0000ff" />;
@@ -180,6 +207,8 @@ const DetailsScreen = ({ route }) => {
                 <Text style={styles.name}>{product.name}</Text>
                 <Text style={styles.description}>{product.description}</Text>
                 <Text style={styles.category}>{`Loại sản phẩm : ${product.category.name}`}</Text>
+
+                <Text style={styles.stockText}>{`Số lượng còn lại: ${product.countInStock}`}</Text>
 
                 <View style={styles.priceContainer}>
                     {product.discount?.value > 0 ? (
@@ -204,7 +233,7 @@ const DetailsScreen = ({ route }) => {
 
             <View style={styles.imageContainer}>
                 <Image source={{ uri: productId.image }} />
-                <TouchableOpacity onPress={() => toggleFavorite(productId)} style={styles.favoriteButton}>
+                <TouchableOpacity onPress={toggleFavorite} style={styles.favoriteButton}>
                     <Icon
                         name={isFavorite ? "heart" : "heart-o"}
                         size={24}
@@ -229,16 +258,38 @@ const DetailsScreen = ({ route }) => {
                 <Text style={styles.addToCartText}>Add to Cart</Text>
             </TouchableOpacity>
 
-            {/* Additional related products section */}
+            {/* Hiển thị sản phẩm liên quan */}
             <View style={styles.relatedContainer}>
-                <Text style={styles.noRelatedProductsText}>No related products</Text>
+                <Text style={styles.sectionTitle}>Sản phẩm liên quan:</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    {relatedProducts.length > 0 ? (
+                        relatedProducts
+                            .filter(relatedProduct => relatedProduct._id !== productId)
+                            .map((relatedProduct) => (
+                                <TouchableOpacity
+                                    key={relatedProduct._id}
+                                    style={styles.relatedProductItem}
+                                    onPress={() => navigation.navigate('DetailsScreen', { productId: relatedProduct._id })}
+                                >
+                                    <Image
+                                        source={{ uri: relatedProduct.images[0] }}
+                                        style={styles.relatedProductImage}
+                                    />
+                                    <Text style={styles.relatedProductName}>{relatedProduct.name}</Text>
+                                </TouchableOpacity>
+                            ))
+                    ) : (
+                        <Text style={styles.noRelatedProductsText}>Không có sản phẩm liên quan.</Text>
+                    )}
+                </ScrollView>
             </View>
+
             <View style={styles.feedbackContainer}>
                 <Text style={styles.sectionTitle}>Feedback từ khách hàng:</Text>
                 {feedbacks.length > 0 ? (
                     feedbacks.map((feedback, index) => (
                         <View key={index} style={styles.feedbackItem}>
-                            <Text style={styles.feedbackUser}>{feedback.user || "Khách hàng ẩn danh"}</Text>
+                            <Text style={styles.feedbackUser}>{feedback.user.name || "Khách hàng ẩn danh"}</Text>
                             <Text style={styles.feedbackContent}>{feedback.comment}</Text>
                             <Text style={styles.feedbackRating}>⭐ {feedback.rating}/5</Text>
                         </View>
@@ -248,13 +299,12 @@ const DetailsScreen = ({ route }) => {
                 )}
             </View>
         </ScrollView>
-
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
+        flexGrow: 1,
         backgroundColor: "#fff",
     },
     image: {
@@ -356,6 +406,22 @@ const styles = StyleSheet.create({
     relatedContainer: {
         padding: 20,
     },
+    relatedProductItem: {
+        marginRight: 15,
+        alignItems: "center",
+    },
+    relatedProductImage: {
+        width: 100,
+        height: 100,
+        resizeMode: "cover",
+        borderRadius: 10,
+    },
+    relatedProductName: {
+        fontSize: 14,
+        color: "#333",
+        textAlign: "center",
+        marginTop: 5,
+    },
     noRelatedProductsText: {
         fontSize: 16,
         color: "#777",
@@ -392,6 +458,14 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: "#777",
         textAlign: "center",
+    },
+    stockText: {
+        fontSize: 14,
+        color: "#555",
+        marginBottom: 10,
+    },
+    imageContainer: {
+        position: "relative",
     },
 });
 

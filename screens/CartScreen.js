@@ -238,13 +238,13 @@ export default function CartScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#f9f9f9",
     padding: 20,
   },
   title: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 15,
+    marginBottom: 20,
     textAlign: "center",
     color: "#333",
   },
@@ -259,9 +259,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     backgroundColor: "#fff",
-    padding: 12,
+    padding: 15,
     borderRadius: 10,
-    marginBottom: 12,
+    marginBottom: 15,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -269,13 +269,22 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   name: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "bold",
     color: "#333",
-    flex: 1,
-    marginRight: 10, // Add margin to separate from the info section
+    flex: 2,
+    marginRight: 10,
+    overflow: "hidden",
+    maxWidth: '60%',
+  },
+  image: {
+    width: 80,
+    height: 80,
+    resizeMode: "cover",
+    borderRadius: 8,
   },
   info: {
+    flex: 3,
     alignItems: "flex-end",
   },
   priceContainer: {
@@ -371,10 +380,5 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     color: "#fff",
-  },
-  image: {
-    width: 100,
-    height: 100,
-    resizeMode: "cover",
   },
 });

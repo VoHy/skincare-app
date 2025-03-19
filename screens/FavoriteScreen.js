@@ -115,6 +115,8 @@ export default function FavoriteScreen() {
               }
               setFavorites([]); // Reset danh sách yêu thích
               await AsyncStorage.removeItem(`favorites_${userId}`);
+              // Gọi callback để thông báo cho HomeScreen
+              navigation.navigate("HomeScreen"); // Điều hướng lại để cập nhật
             } catch (error) {
               console.error("Lỗi khi xóa danh sách yêu thích:", error);
             }

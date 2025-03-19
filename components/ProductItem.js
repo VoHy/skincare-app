@@ -41,7 +41,7 @@ export default function ProductItem({ item, onPress, onFavorite, isFavorite }) {
 
       {/* Thông tin sản phẩm */}
       <View style={styles.infoContainer}>
-        <Text style={styles.name} numberOfLines={2}>
+        <Text style={styles.name} numberOfLines={3}>
           {item.name}
         </Text>
 
@@ -94,8 +94,7 @@ const styles = StyleSheet.create({
     margin: 8,
     alignItems: "center",
     shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 3 },
+    shadowOffset: { width: 0, height: 1 },
     shadowRadius: 5,
     elevation: 5,
     borderWidth: 1,
@@ -134,6 +133,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
     textAlign: "center",
+    width: 130,
     color: "#333",
   },
   priceContainer: {

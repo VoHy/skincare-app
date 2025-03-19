@@ -3,99 +3,99 @@ import {
   View,
   Text,
   FlatList,
-  TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
   Alert,
   ImageBackground,
+  ScrollView,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { API_URL } from "../utils/ApiConfig";
 import ProductItem from "../components/ProductItem";
 import Header from "../components/Header";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
 
 export default function HomeScreen() {
-  const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
-  const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedBrand, setSelectedBrand] = useState("");
   const [favorites, setFavorites] = useState([]);
+  const [newestProducts, setNewestProducts] = useState([]);
+  const [topPurchasedProducts, setTopPurchasedProducts] = useState([]);
   const navigation = useNavigation();
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchNewestProducts = async () => {
       try {
-        const response = await fetch(`${API_URL}/product/get-all`);
+        const response = await fetch(`${API_URL}/product/get-all/newest`);
         const data = await response.json();
 
         if (!response.ok) {
           throw new Error(`API Error: ${response.statusText}`);
         }
 
-        if (data && Array.isArray(data.data)) {
-          const sortedProducts = data.data.sort(
-            (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-          );
-
-          setProducts(sortedProducts);
-          setFilteredProducts(sortedProducts);
-
-          const uniqueBrands = [
-            "All",
-            ...new Set(
-              sortedProducts.map((product) => product.brand).filter(Boolean)
-            ),
-          ];
-          setBrands(uniqueBrands);
+        if (Array.isArray(data)) {
+          setNewestProducts(data);
         } else {
-          setError("No products available.");
+          console.error("Newest products data is not an array:", data);
+          setNewestProducts([]);
         }
       } catch (error) {
-        setError(`An error occurred: ${error.message}`);
+        console.error(`Error fetching newest products: ${error.message}`);
+        setNewestProducts([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProducts();
-  }, []);
-
-  useEffect(() => {
-    const fetchFavorites = async () => {
+    const fetchTopPurchasedProducts = async () => {
       try {
-        const userId = await AsyncStorage.getItem("userId");
-        if (userId) {
-          const storedFavorites = await AsyncStorage.getItem(
-            `favorites_${userId}`
-          );
-          const favorites = storedFavorites ? JSON.parse(storedFavorites) : [];
-          setFavorites(favorites);
+        const response = await fetch(`${API_URL}/product/get-all/top-purchased`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(`API Error: ${response.statusText}`);
+        }
+
+        if (Array.isArray(data)) {
+          setTopPurchasedProducts(data);
+        } else {
+          console.error("Top purchased products data is not an array:", data);
         }
       } catch (error) {
-        console.error("Error fetching favorites:", error);
+        console.error(`Error fetching top purchased products: ${error.message}`);
+      } finally {
+        setLoading(false);
       }
     };
 
+    fetchNewestProducts();
+    fetchTopPurchasedProducts();
+  }, []);
+
+  const fetchFavorites = async () => {
+    try {
+      const userId = await AsyncStorage.getItem("userId");
+      if (userId) {
+        const storedFavorites = await AsyncStorage.getItem(`favorites_${userId}`);
+        let favorites = storedFavorites ? JSON.parse(storedFavorites) : [];
+        setFavorites(favorites);
+      }
+    } catch (error) {
+      console.error("Error fetching favorites:", error);
+    }
+  };
+
+  useEffect(() => {
     fetchFavorites();
   }, []);
 
-  const handleBrandSelect = (brand) => {
-    setSelectedBrand(brand);
-    if (brand === "All") {
-      setFilteredProducts(products);
-    } else {
-      const filteredByBrand = products.filter(
-        (product) =>
-          product.brand &&
-          typeof product.brand === "string" &&
-          product.brand.toLowerCase() === brand.toLowerCase()
-      );
-      setFilteredProducts(filteredByBrand);
-    }
-  };
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchFavorites();
+    }, [])
+  );
 
   const handleFavorite = async (productId) => {
     try {
@@ -112,16 +112,13 @@ export default function HomeScreen() {
       if (index !== -1) {
         favorites.splice(index, 1);
       } else {
-        const productToAdd = products.find((item) => item._id === productId);
+        const productToAdd = newestProducts.find((item) => item._id === productId) || topPurchasedProducts.find((item) => item._id === productId);
         if (productToAdd) {
           favorites.push(productToAdd);
         }
       }
 
-      await AsyncStorage.setItem(
-        `favorites_${userId}`,
-        JSON.stringify(favorites)
-      );
+      await AsyncStorage.setItem(`favorites_${userId}`, JSON.stringify(favorites));
       setFavorites(favorites);
     } catch (error) {
       console.error("Error saving favorites:", error);
@@ -148,78 +145,76 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <Header
         onSearch={(searchText) => {
-          const filtered = products.filter(
+          const filtered = [...newestProducts, ...topPurchasedProducts].filter(
             (item) =>
-              item.name.toLowerCase().includes(searchText.toLowerCase()) ||
-              item.brand.toLowerCase().includes(searchText.toLowerCase())
+            (item?.name?.toLowerCase().includes(searchText.toLowerCase()) ||
+              item?.brand?.name?.toLowerCase().includes(searchText.toLowerCase()))
           );
           setFilteredProducts(filtered);
         }}
       />
 
-      Phần quảng cáo
-      <ImageBackground
-        source={{
-          uri: "https://cdn.happyskin.vn/media/54/cham-soc-lan-da-nang-tam-ve-dep.jpg",
-        }}
-        style={styles.adContainer}
-        imageStyle={styles.adImage}
-      >
-      </ImageBackground>
-
-      {/* Khoảng cách giữa quảng cáo và danh sách brand */}
-      <View style={styles.spacing} />
-
-      {/* Danh sách brand */}
-      <FlatList
-        data={[...brands]}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        keyExtractor={(item, index) => index.toString()}
-        contentContainerStyle={styles.brandList}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={[
-              styles.brandButton,
-              selectedBrand === item && styles.brandSelected,
-            ]}
-            onPress={() => handleBrandSelect(item)}
-          >
-            <Text
-              style={[
-                styles.brandText,
-                selectedBrand === item && styles.brandTextSelected,
-              ]}
-            >
-              {item}
-            </Text>
-          </TouchableOpacity>
-        )}
-      />
-
-      {/* Danh sách sản phẩm */}
-      {filteredProducts.length === 0 ? (
-        <Text style={styles.emptyText}>No products available.</Text>
-      ) : (
-        <FlatList
-          data={filteredProducts}
-          keyExtractor={(item) => item._id.toString()}
-          numColumns={2}
-          renderItem={({ item }) => {
-            const isFavorite = favorites.some((fav) => fav._id === item._id);
-            return (
-              <ProductItem
-                item={item}
-                onPress={() =>
-                  navigation.navigate("DetailsScreen", { productId: item._id })
-                }
-                onFavorite={() => handleFavorite(item._id)}
-                isFavorite={isFavorite}
-              />
-            );
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <ImageBackground
+          source={{
+            uri: "https://cdn.happyskin.vn/media/54/cham-soc-lan-da-nang-tam-ve-dep.jpg",
           }}
+          style={styles.adContainer}
+          imageStyle={styles.adImage}
         />
-      )}
+
+        <View style={styles.spacing} />
+
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Sản phẩm mới</Text>
+          <FlatList
+            data={newestProducts}
+            keyExtractor={(item) => item._id.toString()}
+            horizontal={true}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.productList}
+            renderItem={({ item }) => (
+              <View style={styles.productItemContainer}>
+                <ProductItem
+                  item={item}
+                  onPress={() =>
+                    navigation.navigate("DetailsScreen", { productId: item._id })
+                  }
+                  onFavorite={() => handleFavorite(item._id)}
+                  isFavorite={favorites.some((fav) => fav._id === item._id)}
+                />
+              </View>
+            )}
+          />
+          <View style={styles.spacing} />
+          <Text style={styles.sectionTitle}>Sản phẩm bán chạy</Text>
+          <FlatList
+            data={topPurchasedProducts}
+            keyExtractor={(item) => item._id.toString()}
+            horizontal={true}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.productList}
+            renderItem={({ item }) => (
+              <View style={styles.productItemContainer}>
+                <View style={styles.purchaseCountContainer}>
+                  <Text style={styles.purchaseCountText}>Đã bán: {item.totalPurchased}</Text>
+                </View>
+                <ProductItem
+                  item={item.product}
+                  onPress={() =>
+                    navigation.navigate("DetailsScreen", { productId: item._id })
+                  }
+                  onFavorite={() => handleFavorite(item._id)}
+                  isFavorite={favorites.some((fav) => fav._id === item._id)}
+                />
+              </View>
+            )}
+          />
+
+        </View>
+
+        <View style={styles.spacing} />
+      </ScrollView>
     </View>
   );
 }
@@ -227,20 +222,13 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-    padding: 20,
+    backgroundColor: "#f8f8f8",
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#fff",
-  },
-  emptyText: {
-    textAlign: "center",
-    fontSize: 16,
-    color: "#777",
-    marginTop: 20,
   },
   errorText: {
     textAlign: "center",
@@ -250,55 +238,68 @@ const styles = StyleSheet.create({
   },
   adContainer: {
     width: "100%",
-    height: 150,
+    height: 180,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 20,
-    borderRadius: 10,
+    marginTop: 10,
+    marginHorizontal: 10,
+    borderRadius: 15,
     overflow: "hidden",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   adImage: {
-    borderRadius: 10,
-  },
-  adText: {
-    color: "#fff",
-    fontSize: 24,
-    fontWeight: "bold",
-    textAlign: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    padding: 10,
-    borderRadius: 5,
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+    borderRadius: 15,
   },
   spacing: {
-    height: 10, // Khoảng cách giữa quảng cáo và danh sách brand
+    height: 15,
   },
-  brandList: {
-    flexDirection: "row",
+  sectionContainer: {
+    marginHorizontal: 10,
+    marginVertical: 5,
+  },
+  sectionTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginVertical: 12,
+    color: "#333",
+    paddingLeft: 5,
+  },
+  productList: {
+    paddingHorizontal: 5,
     paddingVertical: 10,
-    paddingHorizontal: 10,
-    justifyContent: "center",
   },
-  brandButton: {
-    minHeight: 40,
-    maxHeight: 50,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#FF6F61",
-    marginHorizontal: 5,
+  purchaseCountContainer: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    backgroundColor: 'rgba(255, 111, 97, 0.9)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    zIndex: 2,
   },
-  brandText: {
-    fontSize: 14,
-    color: "#FF6F61",
-    textAlign: "center",
+  purchaseCountText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
-  brandSelected: {
-    backgroundColor: "#FF6F61",
-  },
-  brandTextSelected: {
-    color: "#fff",
+  productItemContainer: {
+    marginHorizontal: 8,
+    borderRadius: 12,
+    width: 180,
+    height: 280,
+    elevation: 3,
+    position: 'relative',
+    overflow: 'hidden',
   },
 });
